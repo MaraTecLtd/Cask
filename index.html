@@ -98,20 +98,23 @@
       padding-left:105px;
       padding-right:105px;
     }
-    header::before, header::after{width:115px;height:115px;top:39px;}
-    header::before{left:90px;}
-    header::after{right:90px;}
+    header::before, header::after{width:90px;height:90px;top:50px;}
+    header::before{left:10px;}
+    header::after{right:10px;}
     header h1{font-size:34px;}
     header p{letter-spacing:.16em;}
   }
   @media (max-width:560px){
     header{height:180px;padding-left:55px;padding-right:55px;}
-    header::before, header::after{opacity:.35;width:95px;height:95px;top:55px;}
-    header::before{left:45px;}
-    header::after{right:45px;}
+    header::before, header::after{opacity:.35;width:45px;height:45px;top:68px;}
+    header::before{left:5px;}
+    header::after{right:5px;}
     header h1{font-size:27px;}
     header .eyebrow{font-size:9px;letter-spacing:.25em;}
     header p{font-size:9px;}
+  }
+  @media (max-width:400px){
+    header::before, header::after{display:none;}
   }
   .toggle-row{
     display:flex;align-items:center;justify-content:center;gap:10px;
@@ -163,8 +166,8 @@
   .breakdown .line.stillToSpend{border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:4px;padding:8px 0;color:var(--paper);}
   .breakdown .line.stillToSpend span:first-child{font-weight:bold;}
   .breakdown .line.stillToSpend span:last-child{font-weight:bold;font-size:14px;}
-  .cask.bourbon .breakdown .line.total span:last-child{color:var(--amber-bright);}
-  .cask.sherry .breakdown .line.total span:last-child{color:var(--sherry-bright);}
+  .cask.bourbon .breakdown .line.total span:last-child{color:var(--paper);}
+  .cask.sherry .breakdown .line.total span:last-child{color:var(--paper);}
   .cask.bourbon .breakdown .line.stillToSpend{color:var(--amber-bright);}
   .cask.bourbon .breakdown .line.stillToSpend span:last-child{color:var(--amber-bright);}
   .cask.sherry .breakdown .line.stillToSpend{color:var(--sherry-bright);}
@@ -296,7 +299,7 @@
         </div>
         <div class="row">
           <label>Bottle target date <span class="val" id="sh_dateVal"></span></label>
-          <input type="range" id="sh_date" min="2026.5" max="2046" step="0.0833" value="2028.8212">
+          <input type="range" id="sh_date" min="2026.5833" max="2046" step="0.0833" value="2028.8212">
         </div>
         <div class="row">
           <label>Angel's share, yr 2+ (5% fixed volume loss in year 1) <span class="val" id="sh_evapVal"></span></label>
