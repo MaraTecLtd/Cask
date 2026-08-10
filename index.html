@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cask Ledger — Cost per Bottle</title>
+<style>
+  :root{
+    --bg: #14100c;
+    --panel: #1d1712;
+    --line: #3a2f22;
+    --paper: #ece3d2;
+    --paper-dim: #b8ab93;
+    --amber: #c98a3a;
+    --amber-bright: #e0a94f;
+    --sherry: #8a3a3a;
+    --sherry-bright: #c05656;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: radial-gradient(ellipse at top left, #1c150f 0%, var(--bg) 55%);
+    color:var(--paper);
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+    padding:40px 20px 80px;
+  }
+  .wrap{max-width:1120px;margin:0 auto;}
+  header{
+    text-align:center;
+    margin-bottom:36px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:24px;
+  }
+  header .eyebrow{
+    letter-spacing:0.35em;
+    text-transform:uppercase;
+    font-size:11px;
+    color:var(--amber);
+    font-family:'Courier New',monospace;
+  }
+  header h1{font-size:38px;margin:10px 0 6px;font-weight:400;letter-spacing:0.02em;}
+  header p{color:var(--paper-dim);font-size:14px;font-family:'Courier New',monospace;letter-spacing:0.03em;}
+
+  .toggle-row{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    font-family:'Courier New',monospace;font-size:12px;color:var(--paper-dim);
+    text-transform:uppercase;letter-spacing:0.05em;margin-bottom:28px;
+  }
+  .toggle-row input{accent-color:var(--amber);width:16px;height:16px;}
+
+  .casks{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+  @media (max-width:820px){ .casks{grid-template-columns:1fr;} }
+
+  .cask{background:var(--panel);border:1px solid var(--line);padding:26px;position:relative;border-radius:2px;}
+  .cask::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;}
+  .cask.bourbon::before{background:linear-gradient(90deg,var(--amber),var(--amber-bright));}
+  .cask.sherry::before{background:linear-gradient(90deg,var(--sherry),var(--sherry-bright));}
+
+  .cask h2{font-size:22px;font-weight:400;margin:6px 0 2px;}
+  .cask .sub{font-family:'Courier New',monospace;font-size:12px;color:var(--paper-dim);margin-bottom:18px;}
+
+  .stat-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;
+    margin:18px 0;padding:16px 0;border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);
+  }
+  .stat .k{font-family:'Courier New',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--paper-dim);}
+  .stat .v{font-size:17px;margin-top:2px;}
+  .cask.bourbon .accent{color:var(--amber-bright);}
+  .cask.sherry .accent{color:var(--sherry-bright);}
+
+  .sliders{margin-top:14px;}
+  .sliders .row{margin-bottom:16px;}
+  .sliders label{
+    display:flex;justify-content:space-between;font-family:'Courier New',monospace;
+    font-size:11.5px;color:var(--paper-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;
+  }
+  .sliders label span.val{color:var(--paper);}
+  .cask.bourbon input[type=range]{accent-color:var(--amber-bright);}
+  .cask.sherry input[type=range]{accent-color:var(--sherry-bright);}
+  input[type=range]{width:100%;height:4px;}
+
+  .hero-price{text-align:center;margin-top:20px;padding-top:18px;border-top:1px solid var(--line);}
+  .hero-price .amount{font-size:44px;line-height:1;}
+  .hero-price .label{font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--paper-dim);margin-top:6px;}
+
+  .breakdown{margin-top:16px;font-family:'Courier New',monospace;font-size:12px;}
+  .breakdown .line{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dotted var(--line);color:var(--paper-dim);}
+  .breakdown .line span:last-child{color:var(--paper);}
+  .breakdown .line.total{border-bottom:none;border-top:1px solid var(--line);margin-top:4px;padding-top:8px;color:var(--paper);}
+  .breakdown .line.total span:last-child{font-weight:bold;}
+  .cask.bourbon .breakdown .line.total span:last-child{color:var(--amber-bright);}
+  .cask.sherry .breakdown .line.total span:last-child{color:var(--sherry-bright);}
+
+  .flag{font-family:'Courier New',monospace;font-size:11px;color:var(--sherry-bright);margin-top:8px;display:none;}
+
+  footer{text-align:center;margin-top:36px;font-family:'Courier New',monospace;font-size:11px;color:var(--paper-dim);letter-spacing:0.03em;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Private Cellar Record</div>
+    <h1>Cost per Bottle</h1>
+    <p>Two casks, quietly ageing — what will they actually cost you, dram by dram</p>
+  </header>
+
+  <div class="toggle-row">
+    <input type="checkbox" id="storageToggle" checked>
+    <label for="storageToggle" style="margin:0;">Apply £65/yr storage fee after age 10 (prorated)</label>
+  </div>
+
+  <div class="casks">
+    <!-- BOURBON -->
+    <div class="cask bourbon">
+      <h2>Bourbon</h2>
+      <div class="sub">American oak ex‑bourbon barrel · unpeated · filled 30 Jul 2016</div>
+
+      <div class="stat-grid">
+        <div class="stat"><div class="k">Age at target</div><div class="v accent" id="bo_age"></div></div>
+        <div class="stat"><div class="k">Projected strength</div><div class="v accent" id="bo_abv"></div></div>
+        <div class="stat"><div class="k">Projected volume</div><div class="v accent" id="bo_vol"></div></div>
+        <div class="stat"><div class="k">Volume at bottling</div><div class="v accent" id="bo_bottleVol"></div></div>
+        <div class="stat"><div class="k">Bottle yield</div><div class="v accent" id="bo_bottles"></div></div>
+      </div>
+
+      <div class="sliders">
+        <div class="row">
+          <label>Fill strength <span class="val" id="bo_fillAbvVal">63.5% ABV</span></label>
+          <input type="range" id="bo_fillAbv" min="45" max="65" step="0.5" value="63.5">
+        </div>
+        <div class="row">
+          <label>Litres filled <span class="val" id="bo_litresVal">200 L</span></label>
+          <input type="range" id="bo_litres" min="150" max="250" step="1" value="200">
+        </div>
+        <div class="row">
+          <label>Bottle target date <span class="val" id="bo_dateVal"></span></label>
+          <input type="range" id="bo_date" min="2026" max="2046" step="0.0833" value="2030">
+        </div>
+        <div class="row">
+          <label>Angel's share, yr 2+ <span class="val" id="bo_evapVal"></span></label>
+          <input type="range" id="bo_evap" min="0.5" max="4" step="0.1" value="2">
+        </div>
+        <div class="row">
+          <label>ABV change per year <span class="val" id="bo_abvDriftVal"></span></label>
+          <input type="range" id="bo_abvDrift" min="-2" max="2" step="0.05" value="-0.3">
+        </div>
+        <div class="row">
+          <label>Bottling strength <span class="val" id="bo_strengthVal"></span></label>
+          <input type="range" id="bo_strength" min="40" max="60" step="0.5" value="46">
+        </div>
+        <div class="row">
+          <label>Bottling cost per bottle <span class="val" id="bo_bottlingVal"></span></label>
+          <input type="range" id="bo_bottlingCost" min="0" max="15" step="0.25" value="4">
+        </div>
+      </div>
+
+      <div class="breakdown" id="bo_breakdown"></div>
+
+      <div class="hero-price">
+        <div class="amount accent" id="bo_price">£0.00</div>
+        <div class="label">estimated cost per 700ml bottle</div>
+      </div>
+      <div class="flag" id="bo_flag">⚠ Cask will be essentially empty before this date at current evaporation rate</div>
+    </div>
+
+    <!-- SHERRY -->
+    <div class="cask sherry">
+      <h2>Sherry</h2>
+      <div class="sub">Spanish oak ex‑sherry hogshead · peated · filled 26 Oct 2018</div>
+
+      <div class="stat-grid">
+        <div class="stat"><div class="k">Age at target</div><div class="v accent" id="sh_age"></div></div>
+        <div class="stat"><div class="k">Projected strength</div><div class="v accent" id="sh_abv"></div></div>
+        <div class="stat"><div class="k">Projected volume</div><div class="v accent" id="sh_vol"></div></div>
+        <div class="stat"><div class="k">Volume at bottling</div><div class="v accent" id="sh_bottleVol"></div></div>
+        <div class="stat"><div class="k">Bottle yield</div><div class="v accent" id="sh_bottles"></div></div>
+      </div>
+
+      <div class="sliders">
+        <div class="row">
+          <label>Fill strength <span class="val" id="sh_fillAbvVal">63.5% ABV</span></label>
+          <input type="range" id="sh_fillAbv" min="45" max="65" step="0.5" value="63.5">
+        </div>
+        <div class="row">
+          <label>Litres filled <span class="val" id="sh_litresVal">250 L</span></label>
+          <input type="range" id="sh_litres" min="200" max="300" step="1" value="250">
+        </div>
+        <div class="row">
+          <label>Bottle target date <span class="val" id="sh_dateVal"></span></label>
+          <input type="range" id="sh_date" min="2026" max="2046" step="0.0833" value="2032">
+        </div>
+        <div class="row">
+          <label>Angel's share, yr 2+ <span class="val" id="sh_evapVal"></span></label>
+          <input type="range" id="sh_evap" min="0.5" max="4" step="0.1" value="2">
+        </div>
+        <div class="row">
+          <label>ABV change per year <span class="val" id="sh_abvDriftVal"></span></label>
+          <input type="range" id="sh_abvDrift" min="-2" max="2" step="0.05" value="-0.3">
+        </div>
+        <div class="row">
+          <label>Bottling strength <span class="val" id="sh_strengthVal"></span></label>
+          <input type="range" id="sh_strength" min="40" max="60" step="0.5" value="46">
+        </div>
+        <div class="row">
+          <label>Bottling cost per bottle <span class="val" id="sh_bottlingVal"></span></label>
+          <input type="range" id="sh_bottlingCost" min="0" max="15" step="0.25" value="4">
+        </div>
+      </div>
+
+      <div class="breakdown" id="sh_breakdown"></div>
+
+      <div class="hero-price">
+        <div class="amount accent" id="sh_price">£0.00</div>
+        <div class="label">estimated cost per 700ml bottle</div>
+      </div>
+      <div class="flag" id="sh_flag">⚠ Cask will be essentially empty before this date at current evaporation rate</div>
+    </div>
+  </div>
+
+  <footer>
+    For private enjoyment, not for resale · Duty £33.99/LPA · VAT 20% · figures are estimates for personal planning only
+  </footer>
+</div>
+
+<script>
+const FILL_BOURBON = 2016 + (7-1)/12 + 29/365; // 30 Jul 2016
+const FILL_SHERRY  = 2018 + (10-1)/12 + 26/365; // 26 Oct 2018
+
+const COST_BOURBON = 1950;
+const COST_SHERRY  = 3500;
+const FIRST_YEAR_LOSS = 0.05; // 5% volume loss in year 1
+
+const DUTY_RATE = 33.99; // £ per LPA
+const VAT_RATE = 0.20;
+
+function fmtDate(dec){
+  const year = Math.floor(dec);
+  const monthFloat = (dec - year) * 12;
+  const month = Math.min(11, Math.floor(monthFloat));
+  const names = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return names[month] + " " + year;
+}
+
+function computeCask(fillYear, litresFill, fillABV, costPaid, targetDate, evapPct, abvDriftPct, bottleABV, bottlingCostPerBottle, storageOn){
+  const ageYears = targetDate - fillYear;
+
+  // Volume loss: fixed 5% in year one, then evapPct%/year thereafter (prorated for partial final year)
+  const age = Math.max(ageYears, 0);
+  let volFactor;
+  if(age <= 1){
+    volFactor = 1 - FIRST_YEAR_LOSS * age;
+  } else {
+    const remainingYears = age - 1;
+    volFactor = (1 - FIRST_YEAR_LOSS) * Math.pow(1 - evapPct/100, remainingYears);
+  }
+  const projVol = litresFill * volFactor;
+
+  // ABV over time: compounding drift per year, sign set by slider (positive = rising, negative = falling)
+  const projABV = fillABV * Math.pow(1 + abvDriftPct/100, age);
+  // LPA uses the drifted (actual current) ABV, not the fill ABV — alcohol content changes as ABV drifts
+  const LPA_now = litresFill * volFactor * (projABV/100);
+
+  let storageCost = 0;
+  if(storageOn && ageYears > 10){
+    const chargeableYears = ageYears - 10;
+    storageCost = chargeableYears * 65;
+  }
+
+  const finalABV = Math.max(0, Math.min(projABV, bottleABV));
+  const finalVolAtBottleStrength = finalABV > 0 ? LPA_now / (finalABV/100) : 0;
+  const numBottles = finalVolAtBottleStrength / 0.7;
+
+  const dutyTotal = LPA_now * DUTY_RATE;
+  const preVatTotal = costPaid + storageCost + dutyTotal + (bottlingCostPerBottle * numBottles);
+  const vatTotal = preVatTotal * VAT_RATE;
+  const grandTotal = preVatTotal + vatTotal;
+
+  const perBottle = numBottles > 0.01 ? grandTotal / numBottles : NaN;
+
+  return {
+    ageYears, projVol, projABV, finalVolAtBottleStrength, numBottles, storageCost, dutyTotal,
+    bottlingTotal: bottlingCostPerBottle * numBottles, vatTotal, grandTotal, perBottle,
+    costPaid
+  };
+}
+
+function fillCaskUI(prefix, r){
+  document.getElementById(prefix+'_age').textContent = r.ageYears.toFixed(1) + ' yrs';
+  document.getElementById(prefix+'_abv').textContent = r.projABV.toFixed(1) + '%';
+  document.getElementById(prefix+'_vol').textContent = r.projVol.toFixed(1) + ' L';
+  document.getElementById(prefix+'_bottleVol').textContent = r.finalVolAtBottleStrength.toFixed(1) + ' L';
+  document.getElementById(prefix+'_bottles').textContent = r.numBottles.toFixed(1) + ' bottles';
+
+  const flag = document.getElementById(prefix+'_flag');
+  flag.style.display = (r.projVol < 5 || r.numBottles < 1) ? 'block' : 'none';
+
+  const bd = document.getElementById(prefix+'_breakdown');
+  bd.innerHTML = `
+    <div class="line"><span>Original spirit + cask</span><span>£${r.costPaid.toFixed(2)}</span></div>
+    <div class="line"><span>Storage (post age‑10, prorated)</span><span>£${r.storageCost.toFixed(2)}</span></div>
+    <div class="line"><span>Duty (£33.99/LPA)</span><span>£${r.dutyTotal.toFixed(2)}</span></div>
+    <div class="line"><span>Bottling (£/bottle × ${r.numBottles.toFixed(1)})</span><span>£${r.bottlingTotal.toFixed(2)}</span></div>
+    <div class="line"><span>VAT (20%)</span><span>£${r.vatTotal.toFixed(2)}</span></div>
+    <div class="line total"><span>Total outlay</span><span>£${r.grandTotal.toFixed(2)}</span></div>
+  `;
+
+  document.getElementById(prefix+'_price').textContent =
+    isNaN(r.perBottle) ? '—' : '£' + r.perBottle.toFixed(2);
+}
+
+function renderCask(prefix, fillYear, cost){
+  const litres = parseFloat(document.getElementById(prefix+'_litres').value);
+  const fillAbv = parseFloat(document.getElementById(prefix+'_fillAbv').value);
+  const date = parseFloat(document.getElementById(prefix+'_date').value);
+  const evap = parseFloat(document.getElementById(prefix+'_evap').value);
+  const abvDrift = parseFloat(document.getElementById(prefix+'_abvDrift').value);
+  const strength = parseFloat(document.getElementById(prefix+'_strength').value);
+  const bottlingCost = parseFloat(document.getElementById(prefix+'_bottlingCost').value);
+  const storageOn = document.getElementById('storageToggle').checked;
+
+  document.getElementById(prefix+'_litresVal').textContent = litres + ' L';
+  document.getElementById(prefix+'_fillAbvVal').textContent = fillAbv.toFixed(1) + '% ABV';
+  document.getElementById(prefix+'_dateVal').textContent = fmtDate(date);
+  document.getElementById(prefix+'_evapVal').textContent = evap.toFixed(1) + '%/yr';
+  document.getElementById(prefix+'_abvDriftVal').textContent = (abvDrift > 0 ? '+' : '') + abvDrift.toFixed(1) + '%/yr';
+  document.getElementById(prefix+'_strengthVal').textContent = strength.toFixed(1) + '% ABV';
+  document.getElementById(prefix+'_bottlingVal').textContent = '£' + bottlingCost.toFixed(2);
+
+  const r = computeCask(fillYear, litres, fillAbv, cost, date, evap, abvDrift, strength, bottlingCost, storageOn);
+  fillCaskUI(prefix, r);
+}
+
+function renderAll(){
+  renderCask('bo', FILL_BOURBON, COST_BOURBON);
+  renderCask('sh', FILL_SHERRY, COST_SHERRY);
+}
+
+document.querySelectorAll('input[type=range], #storageToggle').forEach(el=>{
+  el.addEventListener('input', renderAll);
+});
+
+renderAll();
+</script>
+</body>
+</html>
