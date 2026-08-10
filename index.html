@@ -158,10 +158,17 @@
   .breakdown{margin-top:16px;font-family:'Courier New',monospace;font-size:12px;}
   .breakdown .line{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dotted var(--line);color:var(--paper-dim);}
   .breakdown .line span:last-child{color:var(--paper);}
-  .breakdown .line.total{border-bottom:none;border-top:1px solid var(--line);margin-top:4px;padding-top:8px;color:var(--paper);}
-  .breakdown .line.total span:last-child{font-weight:bold;}
+  .breakdown .line.total{border-bottom:none;border-top:1px solid var(--line);margin-top:4px;padding-top:8px;color:var(--paper);font-weight:700;}
+  .breakdown .line.total span:last-child{font-weight:800;font-size:17px;}
+  .breakdown .line.stillToSpend{border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:4px;padding:8px 0;color:var(--paper);}
+  .breakdown .line.stillToSpend span:first-child{font-weight:bold;}
+  .breakdown .line.stillToSpend span:last-child{font-weight:bold;font-size:14px;}
   .cask.bourbon .breakdown .line.total span:last-child{color:var(--amber-bright);}
   .cask.sherry .breakdown .line.total span:last-child{color:var(--sherry-bright);}
+  .cask.bourbon .breakdown .line.stillToSpend{color:var(--amber-bright);}
+  .cask.bourbon .breakdown .line.stillToSpend span:last-child{color:var(--amber-bright);}
+  .cask.sherry .breakdown .line.stillToSpend{color:var(--sherry-bright);}
+  .cask.sherry .breakdown .line.stillToSpend span:last-child{color:var(--sherry-bright);}
 
   .flag{font-family:'Courier New',monospace;font-size:11px;color:var(--sherry-bright);margin-top:8px;display:none;}
 
@@ -240,15 +247,15 @@
         </div>
         <div class="row">
           <label>ABV change per year <span class="val" id="bo_abvDriftVal"></span></label>
-          <input type="range" id="bo_abvDrift" min="-2" max="2" step="0.05" value="-0.3">
+          <input type="range" id="bo_abvDrift" min="-2" max="2" step="0.05" value="-0.5">
         </div>
         <div class="row">
           <label>Bottling strength <span class="val" id="bo_strengthVal"></span></label>
-          <input type="range" id="bo_strength" min="40" max="60" step="0.5" value="46">
+          <input type="range" id="bo_strength" min="40" max="60" step="0.5" value="100">
         </div>
         <div class="row">
           <label>Bottling cost per bottle <span class="val" id="bo_bottlingVal"></span></label>
-          <input type="range" id="bo_bottlingCost" min="0" max="15" step="0.25" value="4">
+          <input type="range" id="bo_bottlingCost" min="0" max="15" step="0.25" value="10">
         </div>
       </div>
 
@@ -297,15 +304,15 @@
         </div>
         <div class="row">
           <label>ABV change per year <span class="val" id="sh_abvDriftVal"></span></label>
-          <input type="range" id="sh_abvDrift" min="-2" max="2" step="0.05" value="-0.3">
+          <input type="range" id="sh_abvDrift" min="-2" max="2" step="0.05" value="-0.5">
         </div>
         <div class="row">
           <label>Bottling strength <span class="val" id="sh_strengthVal"></span></label>
-          <input type="range" id="sh_strength" min="40" max="60" step="0.5" value="46">
+          <input type="range" id="sh_strength" min="40" max="60" step="0.5" value="100">
         </div>
         <div class="row">
           <label>Bottling cost per bottle <span class="val" id="sh_bottlingVal"></span></label>
-          <input type="range" id="sh_bottlingCost" min="0" max="15" step="0.25" value="4">
+          <input type="range" id="sh_bottlingCost" min="0" max="15" step="0.25" value="10">
         </div>
       </div>
 
@@ -381,10 +388,12 @@ function computeCask(fillYear, litresFill, fillABV, costPaid, targetDate, evapPc
 
   const perBottle = numBottles > 0.01 ? grandTotal / numBottles : NaN;
 
+  const remainingToSpend = storageCost + dutyTotal + (bottlingCostPerBottle * numBottles);
+
   return {
     ageYears, projVol, projABV, finalVolAtBottleStrength, numBottles, storageCost, dutyTotal,
     bottlingTotal: bottlingCostPerBottle * numBottles, vatTotal, grandTotal, perBottle,
-    costPaid
+    costPaid, remainingToSpend
   };
 }
 
@@ -399,12 +408,14 @@ function fillCaskUI(prefix, r){
   flag.style.display = (r.projVol < 5 || r.numBottles < 1) ? 'block' : 'none';
 
   const bd = document.getElementById(prefix+'_breakdown');
+  const stillToSpend = r.grandTotal - r.costPaid;
   bd.innerHTML = `
     <div class="line"><span>Original spirit + cask</span><span>£${r.costPaid.toFixed(2)}</span></div>
     <div class="line"><span>Storage (post age‑10, prorated)</span><span>£${r.storageCost.toFixed(2)}</span></div>
     <div class="line"><span>Duty (£33.99/LPA)</span><span>£${r.dutyTotal.toFixed(2)}</span></div>
     <div class="line"><span>Bottling (£/bottle × ${r.numBottles.toFixed(1)})</span><span>£${r.bottlingTotal.toFixed(2)}</span></div>
-    <div class="line"><span>VAT (20%)</span><span>£${r.vatTotal.toFixed(2)}</span></div>
+    <div class="line"><span>VAT (20%, on full outlay incl. spirit)</span><span>£${r.vatTotal.toFixed(2)}</span></div>
+    <div class="line stillToSpend"><span>Still to spend (spirit already paid)</span><span>£${stillToSpend.toFixed(2)}</span></div>
     <div class="line total"><span>Total outlay</span><span>£${r.grandTotal.toFixed(2)}</span></div>
   `;
 
