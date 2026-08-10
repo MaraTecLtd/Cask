@@ -232,11 +232,11 @@
         </div>
         <div class="row">
           <label>Bottle target date <span class="val" id="bo_dateVal"></span></label>
-          <input type="range" id="bo_date" min="2026" max="2046" step="0.0833" value="2030">
+          <input type="range" id="bo_date" min="2026.5833" max="2046" step="0.0833" value="2026.5833">
         </div>
         <div class="row">
-          <label>Angel's share, yr 2+ <span class="val" id="bo_evapVal"></span></label>
-          <input type="range" id="bo_evap" min="0.5" max="4" step="0.1" value="2">
+          <label>Angel's share, yr 2+ (5% fixed volume loss in year 1) <span class="val" id="bo_evapVal"></span></label>
+          <input type="range" id="bo_evap" min="0" max="4" step="0.1" value="2">
         </div>
         <div class="row">
           <label>ABV change per year <span class="val" id="bo_abvDriftVal"></span></label>
@@ -289,11 +289,11 @@
         </div>
         <div class="row">
           <label>Bottle target date <span class="val" id="sh_dateVal"></span></label>
-          <input type="range" id="sh_date" min="2026" max="2046" step="0.0833" value="2032">
+          <input type="range" id="sh_date" min="2026.5" max="2046" step="0.0833" value="2028.8212">
         </div>
         <div class="row">
-          <label>Angel's share, yr 2+ <span class="val" id="sh_evapVal"></span></label>
-          <input type="range" id="sh_evap" min="0.5" max="4" step="0.1" value="2">
+          <label>Angel's share, yr 2+ (5% fixed volume loss in year 1) <span class="val" id="sh_evapVal"></span></label>
+          <input type="range" id="sh_evap" min="0" max="4" step="0.1" value="2">
         </div>
         <div class="row">
           <label>ABV change per year <span class="val" id="sh_abvDriftVal"></span></label>
@@ -418,9 +418,20 @@ function renderCask(prefix, fillYear, cost){
   const date = parseFloat(document.getElementById(prefix+'_date').value);
   const evap = parseFloat(document.getElementById(prefix+'_evap').value);
   const abvDrift = parseFloat(document.getElementById(prefix+'_abvDrift').value);
-  const strength = parseFloat(document.getElementById(prefix+'_strength').value);
   const bottlingCost = parseFloat(document.getElementById(prefix+'_bottlingCost').value);
   const storageOn = document.getElementById(prefix+'_storageToggle').checked;
+
+  // Projected ABV at target date, used as the ceiling for the bottling strength slider
+  // (can't bottle stronger than the spirit currently is).
+  const age = Math.max(date - fillYear, 0);
+  const projABV = fillAbv * Math.pow(1 + abvDrift/100, age);
+
+  const strengthEl = document.getElementById(prefix+'_strength');
+  strengthEl.max = projABV.toFixed(1);
+  if(parseFloat(strengthEl.value) > projABV){
+    strengthEl.value = projABV.toFixed(1);
+  }
+  const strength = parseFloat(strengthEl.value);
 
   document.getElementById(prefix+'_litresVal').textContent = litres + ' L';
   document.getElementById(prefix+'_fillAbvVal').textContent = fillAbv.toFixed(1) + '% ABV';
